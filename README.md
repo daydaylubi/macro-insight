@@ -111,7 +111,28 @@ npm start            # 启动生产服务器
 ```
 
 ### 数据库
-项目使用SQLite作为数据库，数据库文件位于 `backend/database.sqlite`。
+项目使用SQLite作为数据库。数据库文件会在首次启动后端服务时自动创建。
+
+#### 数据库初始化
+数据库文件不包含在代码仓库中，需要在本地初始化：
+```bash
+# 方法1：启动后端服务（推荐）
+cd backend
+npm run dev  # 或 npm start
+
+# 方法2：单独初始化数据库
+cd backend
+node -e "require('./src/utils/database')"
+```
+
+#### Mock数据管理
+项目提供了mock数据管理工具，可用于导入测试数据：
+```bash
+cd backend
+node src/utils/mock-data-manager.js import  # 导入mock数据
+node src/utils/mock-data-manager.js status  # 查看数据状态
+```
+更多信息请参考 [Mock数据使用指南](backend/docs/mock-data-usage.md)。
 
 ## API文档
 
