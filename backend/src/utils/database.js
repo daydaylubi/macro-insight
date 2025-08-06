@@ -47,6 +47,7 @@ function initDatabase() {
       impact_level TEXT NOT NULL,
       change_direction TEXT NOT NULL,
       change_amount REAL NOT NULL,
+      source TEXT,
       FOREIGN KEY (indicator_id) REFERENCES indicators (id)
     )
   `, (err) => {
