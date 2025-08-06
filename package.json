@@ -1,0 +1,28 @@
+{
+  "name": "macro-insight",
+  "version": "1.0.0",
+  "description": "宏观数据洞察 - 专为投资新人设计的宏观经济数据解读工具",
+  "main": "index.js",
+  "scripts": {
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "start": "bash scripts/start.sh",
+    "build": "cd frontend && npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "macro",
+    "economics",
+    "investment",
+    "data",
+    "insight"
+  ],
+  "author": "Macro Insight Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.7"
+  }
+}
