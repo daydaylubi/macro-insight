@@ -21,34 +21,42 @@ router.get('/:symbol', async (req, res) => {
     }
 
     // 获取逻辑链条数据
-    const logicChainRows = await query(`
-      SELECT lc.*, ls.id as step_id, ls.step_order, ls.title, ls.description, 
-             ls.explanation, ls.analogy, ls.historical_case
-      FROM logic_chains lc
-      LEFT JOIN logic_steps ls ON lc.id = ls.chain_id
-      WHERE lc.indicator_id = ?
+    const logicChains = await query(`
+      SELECT lc.* FROM logic_chains lc
+      JOIN indicators i ON lc.indicator_id = i.id
+      WHERE i.symbol = ?
+    `, [symbol])
+
+    if (logicChains.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Logic chain not found for this indicator',
+        timestamp: new Date().toISOString()
+      })
+    }
+
+    // 获取逻辑步骤数据
+    const steps = await query(`
+      SELECT ls.* FROM logic_steps ls
+      JOIN logic_chains lc ON ls.chain_id = lc.id
+      JOIN indicators i ON lc.indicator_id = i.id
+      WHERE i.symbol = ?
       ORDER BY ls.step_order
     `, [symbol])
 
     // 组织逻辑链条数据结构
-    let logicChainData = null
-    if (logicChainRows && logicChainRows.length > 0) {
-      const steps = logicChainRows
-        .filter(row => row.step_id)
-        .map(row => ({
-          id: row.step_id,
-          title: row.title,
-          description: row.description,
-          explanation: row.explanation,
-          analogy: row.analogy,
-          historicalCase: row.historical_case
-        }))
-
-      logicChainData = {
-        id: logicChainRows[0].id,
-        indicatorId: symbol,
-        steps: steps
-      }
+    const logicChainData = {
+      id: logicChains[0].id,
+      indicatorId: symbol,
+      steps: steps.map(step => ({
+        id: step.id,
+        stepOrder: step.step_order,
+        title: step.title,
+        description: step.description,
+        explanation: step.explanation,
+        analogy: step.analogy,
+        historicalCase: step.historical_case
+      }))
     }
 
     res.json({
