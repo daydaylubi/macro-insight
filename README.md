@@ -116,21 +116,26 @@ npm start            # 启动生产服务器
 ## API文档
 
 ### 数据概览
-- `GET /api/overview` - 获取数据概览
+- `GET /api/overview?selectedIndicator=:symbol` - 获取指定指标的数据概览
 
 ### 指标数据
-- `GET /api/indicator` - 获取所有指标列表
-- `GET /api/indicator/:symbol` - 获取指定指标详情
+- `GET /api/indicators` - 获取所有指标列表
 
 ### 逻辑链条
 - `GET /api/logic-chain/:symbol` - 获取指定指标的逻辑链条
 
 ### 历史数据
-- `GET /api/history/:symbol` - 获取指定指标的历史数据
+- `GET /api/history/:symbol?period=:period` - 获取指定指标的历史数据
+  - `period` 参数：`12m`（近12个月）或 `3y`（近3年），默认为 `12m`
 
-### 概念解释
+### 系统状态
+- `GET /api/health` - 健康检查接口
+
+### 待实现的API
+以下API在产品规划中，但尚未实现：
 - `GET /api/concepts` - 获取所有概念解释
 - `GET /api/concepts/search?q=关键词` - 搜索概念
+- `GET /api/indicators/:symbol` - 获取指定指标详情
 
 ## 部署
 
