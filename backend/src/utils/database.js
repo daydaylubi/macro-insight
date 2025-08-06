@@ -70,12 +70,36 @@ function initDatabase() {
       console.error('Error creating logic_chains table:', err.message)
     } else {
       console.log('Logic_chains table created or already exists')
+      insertDefaultLogicChains()
+    }
+  })
+  
+  // 创建逻辑步骤表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS logic_steps (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chain_id INTEGER NOT NULL,
+      step_order INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      explanation TEXT,
+      analogy TEXT,
+      historical_case TEXT,
+      FOREIGN KEY (chain_id) REFERENCES logic_chains (id)
+    )
+  `, (err) => {
+    if (err) {
+      console.error('Error creating logic_steps table:', err.message)
+    } else {
+      console.log('Logic_steps table created or already exists')
     }
   })
 }
 
 // 插入默认指标数据
 const defaultIndicators = require('./default-indicators')
+const defaultLogicChains = require('./default-logic-chains')
+
 function insertDefaultIndicators() {
   const indicators = defaultIndicators;
 
@@ -85,6 +109,66 @@ function insertDefaultIndicators() {
        VALUES (?, ?, ?, ?, ?)`,
       [indicator.symbol, indicator.name, indicator.category, indicator.importance, indicator.description]
     );
+  });
+}
+
+// 插入默认逻辑链条数据
+function insertDefaultLogicChains() {
+  const logicChains = defaultLogicChains;
+
+  logicChains.forEach(chain => {
+    // 先获取指标ID
+    db.get(`SELECT id FROM indicators WHERE symbol = ?`, [chain.indicatorId], (err, indicator) => {
+      if (err) {
+        console.error(`Error finding indicator ${chain.indicatorId}:`, err.message);
+        return;
+      }
+      
+      if (!indicator) {
+        console.error(`Indicator ${chain.indicatorId} not found, cannot insert logic chain`);
+        return;
+      }
+      
+      // 插入逻辑链条
+      const chainData = JSON.stringify(chain);
+      db.run(
+        `INSERT OR IGNORE INTO logic_chains (indicator_id, chain_data) 
+         VALUES (?, ?)`,
+        [indicator.id, chainData],
+        function(err) {
+          if (err) {
+            console.error(`Error inserting logic chain for ${chain.indicatorId}:`, err.message);
+            return;
+          }
+          
+          const chainId = this.lastID;
+          console.log(`Logic chain for ${chain.indicatorId} inserted with ID ${chainId}`);
+          
+          // 插入逻辑步骤
+          chain.steps.forEach(step => {
+            db.run(
+              `INSERT OR IGNORE INTO logic_steps 
+               (chain_id, step_order, title, description, explanation, analogy, historical_case)
+               VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              [
+                chainId, 
+                step.stepOrder, 
+                step.title, 
+                step.description, 
+                step.explanation, 
+                step.analogy, 
+                step.historicalCase
+              ],
+              (err) => {
+                if (err) {
+                  console.error(`Error inserting logic step for chain ${chainId}:`, err.message);
+                }
+              }
+            );
+          });
+        }
+      );
+    });
   });
 }
 
