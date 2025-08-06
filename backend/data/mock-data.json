@@ -41,68 +41,6 @@
       "description": "1月CPI数据发布"
     }
   ],
-  "logicChains": [
-    {
-      "id": 1,
-      "indicatorId": "PCE",
-      "steps": [
-        {
-          "id": "pce_1",
-          "title": "PCE超预期上涨",
-          "description": "个人消费支出价格指数环比上涨0.3%",
-          "explanation": "PCE是美联储最看重的通胀指标，比CPI更全面，包含了消费者实际支出的价格变化。",
-          "analogy": "就像菜市场的菜突然都涨价了，而且涨得比预想的快。",
-          "historicalCase": "2022年PCE持续走高，美联储连续加息应对。"
-        },
-        {
-          "id": "pce_2",
-          "title": "通胀压力加大",
-          "description": "核心通胀率维持在4.7%高位",
-          "explanation": "通胀持续高于美联储2%的目标，表明经济过热，需要政策干预。",
-          "analogy": "就像体温持续发烧，需要降温治疗。",
-          "historicalCase": "类似1980年代沃尔克时期的高通胀环境。"
-        },
-        {
-          "id": "pce_3",
-          "title": "美联储政策转向",
-          "description": "通胀数据影响美联储货币政策决策",
-          "explanation": "高通胀迫使美联储采取更加鹰派的立场，可能推迟降息或重新考虑加息。",
-          "analogy": "就像医生看到病情加重，需要调整治疗方案。",
-          "historicalCase": "美联储历史上多次因通胀数据调整政策路径。"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "indicatorId": "CPI",
-      "steps": [
-        {
-          "id": "cpi_1",
-          "title": "CPI大幅超预期",
-          "description": "消费者物价指数同比上涨3.4%，远超预期3.2%",
-          "explanation": "CPI反映消费者购买商品和服务的价格变化，是衡量通胀的重要指标。",
-          "analogy": "就像超市里的商品价格普遍上涨，比预想的涨得更多。",
-          "historicalCase": "2021-2022年CPI快速上升，推动美联储激进加息。"
-        },
-        {
-          "id": "cpi_2",
-          "title": "核心通胀顽固",
-          "description": "核心CPI环比上涨0.4%，显示通胀粘性",
-          "explanation": "核心CPI剔除食品和能源价格，更能反映潜在通胀趋势。",
-          "analogy": "就像发烧的根本原因没有消除，体温难以降下来。",
-          "historicalCase": "1970年代核心通胀持续高企，需要长期政策应对。"
-        },
-        {
-          "id": "cpi_3",
-          "title": "市场预期调整",
-          "description": "通胀数据推动市场重新评估美联储政策路径",
-          "explanation": "高通胀数据降低了市场对美联储降息的预期，影响资产价格。",
-          "analogy": "就像天气预报说会下雨，大家都准备雨伞。",
-          "historicalCase": "每次重要通胀数据发布都会引发市场波动。"
-        }
-      ]
-    }
-  ],
   "historicalData": [
     { "indicatorId": "PCE", "date": "2023-01", "value": 5.4 },
     { "indicatorId": "PCE", "date": "2023-02", "value": 5.0 },
