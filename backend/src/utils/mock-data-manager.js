@@ -71,19 +71,6 @@ async function importMockData() {
     if (mockData.upcomingEvents && mockData.upcomingEvents.length > 0) {
       console.log(`导入 ${mockData.upcomingEvents.length} 条即将发布的事件...`);
       
-      // 首先创建upcoming_events表（如果不存在）
-      await run(`
-        CREATE TABLE IF NOT EXISTS upcoming_events (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          indicator_id TEXT NOT NULL,
-          release_date TEXT NOT NULL,
-          expected_value REAL,
-          importance TEXT,
-          description TEXT,
-          source TEXT
-        )
-      `);
-      
       for (const event of mockData.upcomingEvents) {
         // 插入即将发布的事件
         await run(
@@ -106,17 +93,6 @@ async function importMockData() {
     // 3. 导入历史数据
     if (mockData.historicalData && mockData.historicalData.length > 0) {
       console.log(`导入 ${mockData.historicalData.length} 条历史数据...`);
-      
-      // 首先创建historical_data表（如果不存在）
-      await run(`
-        CREATE TABLE IF NOT EXISTS historical_data (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          indicator_id TEXT NOT NULL,
-          date TEXT NOT NULL,
-          value REAL NOT NULL,
-          source TEXT
-        )
-      `);
       
       for (const data of mockData.historicalData) {
         // 插入历史数据
