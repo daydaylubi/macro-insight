@@ -45,6 +45,16 @@ npm install
 
 在backend目录下运行以下命令：
 
+#### 初始化数据库
+
+```bash
+node src/utils/mock-data-manager.js init
+```
+
+这将初始化数据库，创建所有必要的表。如果数据库文件已存在，会询问是否要删除并重新创建。
+
+> **注意**: 如果您遇到表结构不正确的错误（如缺少source列），请使用此命令重新初始化数据库。
+
 #### 导入mock数据
 
 ```bash
@@ -76,6 +86,22 @@ node src/utils/mock-data-manager.js status
 ```
 
 这将显示当前数据库中测试数据的状态，包括每种类型的数据有多少条记录。
+
+### 故障排除
+
+如果您遇到以下错误：
+
+```
+错误: SQLITE_ERROR: no such column: source
+```
+
+这表明数据库表结构不正确，缺少必要的列。请按照以下步骤解决：
+
+1. 停止后端服务（如果正在运行）
+2. 运行初始化命令：`node src/utils/mock-data-manager.js init`
+3. 选择删除并重新创建数据库
+4. 重新启动后端服务：`npm start`
+5. 再次尝试运行mock数据命令
 
 ## 在代码中使用
 
