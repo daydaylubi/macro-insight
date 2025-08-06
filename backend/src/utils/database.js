@@ -95,6 +95,42 @@ function initDatabase() {
       console.log('Logic_steps table created or already exists')
     }
   })
+  
+  // 创建即将发布的事件表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS upcoming_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      indicator_id TEXT NOT NULL,
+      release_date TEXT NOT NULL,
+      expected_value REAL,
+      importance TEXT,
+      description TEXT,
+      source TEXT
+    )
+  `, (err) => {
+    if (err) {
+      console.error('Error creating upcoming_events table:', err.message)
+    } else {
+      console.log('Upcoming_events table created or already exists')
+    }
+  })
+  
+  // 创建历史数据表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS historical_data (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      indicator_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      value REAL NOT NULL,
+      source TEXT
+    )
+  `, (err) => {
+    if (err) {
+      console.error('Error creating historical_data table:', err.message)
+    } else {
+      console.log('Historical_data table created or already exists')
+    }
+  })
 }
 
 // 插入默认指标数据

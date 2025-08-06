@@ -18,12 +18,28 @@ mock数据存储在 `backend/data/mock-data.json` 文件中，包含以下几种
 
 ### 前提条件
 
-确保您已经安装了所有必要的依赖：
+1. 确保您已经安装了所有必要的依赖：
 
 ```bash
 cd backend
 npm install
 ```
+
+2. **重要**: 确保数据库已初始化。有两种方式可以初始化数据库：
+
+   a. 启动项目（推荐）：
+   ```bash
+   cd backend
+   npm start
+   ```
+   
+   b. 或者，单独初始化数据库：
+   ```bash
+   cd backend
+   node -e "require('./src/utils/database')"
+   ```
+
+> **注意**: 如果数据库未初始化，脚本会提示您先初始化数据库。如果数据库已初始化但没有指标数据，脚本会警告您并询问是否继续。
 
 ### 命令
 
