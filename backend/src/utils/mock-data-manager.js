@@ -227,7 +227,7 @@ async function showStatus() {
 }
 
 /**
- * 检查数据库是否已初始化
+ * 检查数据库是否已初始化，并确保表结构正确
  */
 async function checkDatabaseInitialized() {
   try {
@@ -242,8 +242,45 @@ async function checkDatabaseInitialized() {
       console.log('\n您可以通过以下方式启动项目:');
       console.log('  1. 进入backend目录: cd backend');
       console.log('  2. 启动项目: npm start');
-      console.log('\n或者，您可以单独初始化数据库:');
-      console.log('  node -e "require(\'./src/utils/database\')"');
+      console.log('\n或者，您可以使用此脚本初始化数据库:');
+      console.log('  node src/utils/mock-data-manager.js init');
+      
+      // 询问用户是否要初始化数据库
+      const readline = require('readline').createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
+      
+      return new Promise((resolve) => {
+        readline.question('是否要现在初始化数据库? (y/n): ', (answer) => {
+          readline.close();
+          if (answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
+            console.log('正在初始化数据库...');
+            // 导入数据库模块以触发初始化
+            require('./database');
+            console.log('数据库初始化完成。请稍等几秒钟，然后重新运行此脚本。');
+            resolve(false);
+          } else {
+            console.log('操作已取消');
+            resolve(false);
+          }
+        });
+      });
+    }
+    
+    // 检查表结构是否正确（检查source列是否存在）
+    try {
+      // 尝试查询包含source列的表
+      await query('SELECT source FROM data_points LIMIT 1');
+      await query('SELECT source FROM upcoming_events LIMIT 1');
+      await query('SELECT source FROM historical_data LIMIT 1');
+    } catch (error) {
+      console.error('\x1b[31m错误: 数据库表结构不正确\x1b[0m');
+      console.log('数据库表缺少必要的列（如source列）。');
+      console.log('\n这可能是因为您使用的是旧版本的数据库结构。');
+      console.log('建议删除现有数据库文件并重新初始化:');
+      console.log('  1. 停止后端服务（如果正在运行）');
+      console.log('  2. 运行初始化命令: node src/utils/mock-data-manager.js init');
       return false;
     }
     
@@ -282,17 +319,67 @@ async function checkDatabaseInitialized() {
 }
 
 /**
+ * 初始化数据库
+ */
+async function initializeDatabase() {
+  try {
+    console.log('正在初始化数据库...');
+    
+    // 检查数据库文件是否存在
+    const fs = require('fs');
+    const dbPath = path.join(__dirname, '../database.sqlite');
+    
+    if (fs.existsSync(dbPath)) {
+      console.log('数据库文件已存在。是否要删除并重新创建？');
+      
+      const readline = require('readline').createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
+      
+      const answer = await new Promise((resolve) => {
+        readline.question('删除并重新创建数据库? (y/n): ', (ans) => {
+          readline.close();
+          resolve(ans.toLowerCase());
+        });
+      });
+      
+      if (answer === 'y' || answer === 'yes') {
+        console.log('删除现有数据库文件...');
+        fs.unlinkSync(dbPath);
+      } else {
+        console.log('保留现有数据库文件。');
+        return;
+      }
+    }
+    
+    // 导入数据库模块以触发初始化
+    require('./database');
+    console.log('数据库初始化完成。');
+    console.log('现在您可以运行其他命令了，如 import, delete, reset, 或 status。');
+  } catch (error) {
+    console.error('初始化数据库时出错:', error);
+  }
+}
+
+/**
  * 主函数
  */
 async function main() {
   const command = process.argv[2];
   
   if (!command) {
-    console.log('请指定命令: import, delete, reset, 或 status');
+    console.log('请指定命令: init, import, delete, reset, 或 status');
     process.exit(1);
   }
   
   try {
+    // 如果是初始化命令，直接执行
+    if (command.toLowerCase() === 'init') {
+      await initializeDatabase();
+      process.exit(0);
+    }
+    
     // 检查数据库是否已初始化
     const isInitialized = await checkDatabaseInitialized();
     if (!isInitialized) {
@@ -313,7 +400,7 @@ async function main() {
         await showStatus();
         break;
       default:
-        console.log('未知命令。可用命令: import, delete, reset, 或 status');
+        console.log('未知命令。可用命令: init, import, delete, reset, 或 status');
         process.exit(1);
     }
     
