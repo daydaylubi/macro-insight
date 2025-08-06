@@ -23,7 +23,7 @@ function initDatabase() {
       symbol TEXT UNIQUE NOT NULL,
       name TEXT NOT NULL,
       category TEXT NOT NULL,
-      importance INTEGER NOT NULL,
+      importance INTEGER NOT NULL, -- 重要性范围：1-3，其中1=低，2=中，3=高，与前端定义一致
       description TEXT
     )
   `, (err) => {
