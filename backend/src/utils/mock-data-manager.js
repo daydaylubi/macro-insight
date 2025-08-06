@@ -227,6 +227,61 @@ async function showStatus() {
 }
 
 /**
+ * 检查数据库是否已初始化
+ */
+async function checkDatabaseInitialized() {
+  try {
+    // 检查indicators表是否存在并包含数据
+    const indicators = await query(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='indicators'"
+    );
+    
+    if (indicators.length === 0) {
+      console.error('\x1b[31m错误: 数据库未初始化\x1b[0m');
+      console.log('\n请先启动项目或初始化数据库，然后再运行此脚本。');
+      console.log('\n您可以通过以下方式启动项目:');
+      console.log('  1. 进入backend目录: cd backend');
+      console.log('  2. 启动项目: npm start');
+      console.log('\n或者，您可以单独初始化数据库:');
+      console.log('  node -e "require(\'./src/utils/database\')"');
+      return false;
+    }
+    
+    // 检查是否有指标数据
+    const indicatorCount = await query('SELECT COUNT(*) as count FROM indicators');
+    if (indicatorCount[0].count === 0) {
+      console.warn('\x1b[33m警告: 数据库已初始化，但没有指标数据\x1b[0m');
+      console.log('这可能会导致某些mock数据无法正确导入。');
+      console.log('建议先启动项目，确保默认数据已加载。');
+      
+      // 询问用户是否继续
+      const readline = require('readline').createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
+      
+      return new Promise((resolve) => {
+        readline.question('是否继续? (y/n): ', (answer) => {
+          readline.close();
+          if (answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
+            resolve(true);
+          } else {
+            console.log('操作已取消');
+            resolve(false);
+          }
+        });
+      });
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('\x1b[31m错误: 无法连接到数据库\x1b[0m', error.message);
+    console.log('\n请确保数据库文件存在且可访问。');
+    return false;
+  }
+}
+
+/**
  * 主函数
  */
 async function main() {
@@ -238,6 +293,12 @@ async function main() {
   }
   
   try {
+    // 检查数据库是否已初始化
+    const isInitialized = await checkDatabaseInitialized();
+    if (!isInitialized) {
+      process.exit(1);
+    }
+    
     switch (command.toLowerCase()) {
       case 'import':
         await importMockData();
