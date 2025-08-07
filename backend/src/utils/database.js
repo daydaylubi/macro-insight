@@ -166,46 +166,96 @@ function insertDefaultLogicChains() {
         return;
       }
       
-      // 插入逻辑链条
-      const chainData = JSON.stringify(chain);
-      db.run(
-        `INSERT OR IGNORE INTO logic_chains (indicator_id, chain_data) 
-         VALUES (?, ?)`,
-        [indicator.id, chainData],
-        function(err) {
-          if (err) {
-            console.error(`Error inserting logic chain for ${chain.indicatorId}:`, err.message);
-            return;
-          }
-          
-          const chainId = this.lastID;
-          console.log(`Logic chain for ${chain.indicatorId} inserted with ID ${chainId}`);
-          
-          // 插入逻辑步骤
-          chain.steps.forEach(step => {
-            db.run(
-              `INSERT OR IGNORE INTO logic_steps 
-               (chain_id, step_order, title, description, explanation, analogy, historical_case)
-               VALUES (?, ?, ?, ?, ?, ?, ?)`,
-              [
-                chainId, 
-                step.stepOrder, 
-                step.title, 
-                step.description, 
-                step.explanation, 
-                step.analogy, 
-                step.historicalCase
-              ],
-              (err) => {
-                if (err) {
-                  console.error(`Error inserting logic step for chain ${chainId}:`, err.message);
-                }
-              }
-            );
-          });
+      // 检查logic_chains表结构
+      db.all(`PRAGMA table_info(logic_chains)`, [], (err, columns) => {
+        if (err) {
+          console.error(`Error checking logic_chains table structure:`, err.message);
+          return;
         }
-      );
+        
+        // 检查是否有chain_data列
+        const hasChainData = columns.some(col => col.name === 'chain_data');
+        
+        if (hasChainData) {
+          // 原始逻辑：插入逻辑链条包含chain_data
+          const chainData = JSON.stringify(chain);
+          db.run(
+            `INSERT OR IGNORE INTO logic_chains (indicator_id, chain_data) 
+             VALUES (?, ?)`,
+            [indicator.id, chainData],
+            function(err) {
+              if (err) {
+                console.error(`Error inserting logic chain for ${chain.indicatorId}:`, err.message);
+                return;
+              }
+              
+              const chainId = this.lastID;
+              console.log(`Logic chain for ${chain.indicatorId} inserted with ID ${chainId}`);
+              
+              // 插入逻辑步骤
+              insertLogicSteps(chain, chainId);
+            }
+          );
+        } else {
+          // 适应现有数据库：只插入indicator_id
+          db.run(
+            `INSERT OR IGNORE INTO logic_chains (indicator_id) 
+             VALUES (?)`,
+            [chain.indicatorId],
+            function(err) {
+              if (err) {
+                console.error(`Error inserting logic chain for ${chain.indicatorId}:`, err.message);
+                return;
+              }
+              
+              const chainId = this.lastID;
+              console.log(`Logic chain for ${chain.indicatorId} inserted with ID ${chainId} (simplified)`);
+              
+              // 插入逻辑步骤
+              insertLogicSteps(chain, chainId);
+            }
+          );
+        }
+      });
     });
+  });
+}
+
+// 辅助函数：插入逻辑步骤
+function insertLogicSteps(chain, chainId) {
+  // 检查logic_steps表是否存在所需的列
+  db.all(`PRAGMA table_info(logic_steps)`, [], (err, columns) => {
+    if (err) {
+      console.error(`Error checking logic_steps table structure:`, err.message);
+      return;
+    }
+    
+    // 如果表结构符合预期，插入步骤
+    if (columns.length >= 7) { // 至少有7列
+      chain.steps.forEach(step => {
+        db.run(
+          `INSERT OR IGNORE INTO logic_steps 
+           (chain_id, step_order, title, description, explanation, analogy, historical_case)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            chainId, 
+            step.stepOrder, 
+            step.title, 
+            step.description, 
+            step.explanation, 
+            step.analogy, 
+            step.historicalCase
+          ],
+          (err) => {
+            if (err) {
+              console.error(`Error inserting logic step for chain ${chainId}:`, err.message);
+            }
+          }
+        );
+      });
+    } else {
+      console.log(`Skipping logic steps insertion due to incompatible table structure`);
+    }
   });
 }
 
