@@ -2,7 +2,7 @@ const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 
 // 数据库文件路径
-const dbPath = path.join(__dirname, '../database.sqlite')
+const dbPath = path.join(__dirname, '../../data/macro_insight.db')
 
 // 创建数据库连接
 const db = new sqlite3.Database(dbPath, (err) => {
