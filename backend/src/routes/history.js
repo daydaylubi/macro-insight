@@ -25,23 +25,29 @@ router.get('/:symbol', async (req, res) => {
     const now = new Date();
     let startDate = '';
     if (period === '3y') {
-      startDate = new Date(now.setFullYear(now.getFullYear() - 3)).toISOString().split('T')[0];
+      // 创建新的Date对象，避免修改原始now对象
+      const threeYearsAgo = new Date(now);
+      threeYearsAgo.setFullYear(now.getFullYear() - 3);
+      startDate = threeYearsAgo.toISOString().split('T')[0];
     } else { // 默认 '12m'
-      startDate = new Date(now.setMonth(now.getMonth() - 12)).toISOString().split('T')[0];
+      // 创建新的Date对象，避免修改原始now对象
+      const twelveMonthsAgo = new Date(now);
+      twelveMonthsAgo.setMonth(now.getMonth() - 12);
+      startDate = twelveMonthsAgo.toISOString().split('T')[0];
     }
 
-    // 获取历史数据
+    // 获取历史数据 - 从historical_data表中查询
     const historicalData = await query(`
-      SELECT release_date, actual_value FROM data_points 
-      WHERE indicator_id = ? AND release_date >= ?
-      ORDER BY release_date ASC
-    `, [indicator[0].id, startDate])
+      SELECT date, value FROM historical_data 
+      WHERE indicator_id = ? AND date >= ?
+      ORDER BY date ASC
+    `, [symbol, startDate])
 
     // 组织图表数据格式
     let chartData = null
     if (historicalData && historicalData.length > 0) {
-      const labels = historicalData.map(row => row.release_date)
-      const values = historicalData.map(row => row.actual_value)
+      const labels = historicalData.map(row => row.date)
+      const values = historicalData.map(row => row.value)
       
       chartData = {
         labels: labels,

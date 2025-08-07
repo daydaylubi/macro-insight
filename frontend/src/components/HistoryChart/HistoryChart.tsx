@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -10,7 +10,7 @@ import {
   Legend,
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
-import { Indicator } from '../../types'
+import { Indicator, ApiResponse } from '../../types'
 
 ChartJS.register(
   CategoryScale,
@@ -27,95 +27,67 @@ interface HistoryChartProps {
   indicators: Indicator[];
 }
 
+interface HistoricalDataResponse {
+  indicator: Indicator;
+  chartData: {
+    labels: string[];
+    datasets: {
+      label: string;
+      data: number[];
+      borderColor: string;
+      backgroundColor: string;
+      tension: number;
+    }[];
+  } | null;
+  period: string;
+}
+
 const HistoryChart: React.FC<HistoryChartProps> = ({ selectedIndicator, indicators }) => {
   const [timeRange, setTimeRange] = useState('12m')
-
-  // 模拟历史数据
-  const getHistoricalData = () => {
-    // 根据选中的指标返回对应的历史数据
-    const data: Record<string, Record<string, any>> = {
-      PCE: {
-        '12m': {
-          labels: ['2023-02', '2023-03', '2023-04', '2023-05', '2023-06', '2023-07', '2023-08', '2023-09', '2023-10', '2023-11', '2023-12', '2024-01'],
-          datasets: [
-            {
-              label: 'PCE同比',
-              data: [5.1, 4.9, 4.7, 4.5, 4.3, 4.1, 3.9, 3.7, 3.5, 3.3, 3.1, 3.2],
-              borderColor: 'rgb(59, 130, 246)',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              tension: 0.1
-            }
-          ]
-        },
-        '3y': {
-          labels: ['2021-Q1', '2021-Q2', '2021-Q3', '2021-Q4', '2022-Q1', '2022-Q2', '2022-Q3', '2022-Q4', '2023-Q1', '2023-Q2', '2023-Q3', '2023-Q4'],
-          datasets: [
-            {
-              label: 'PCE同比',
-              data: [2.1, 2.3, 2.5, 2.8, 3.2, 3.8, 4.2, 4.7, 4.9, 4.5, 4.1, 3.7],
-              borderColor: 'rgb(59, 130, 246)',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              tension: 0.1
-            }
-          ]
-        }
-      },
-
-      CPI: {
-        '12m': {
-          labels: ['2023-02', '2023-03', '2023-04', '2023-05', '2023-06', '2023-07', '2023-08', '2023-09', '2023-10', '2023-11', '2023-12', '2024-01'],
-          datasets: [
-            {
-              label: 'CPI同比',
-              data: [6.0, 5.8, 5.5, 5.2, 4.9, 4.6, 4.3, 4.0, 3.8, 3.6, 3.4, 3.4],
-              borderColor: 'rgb(239, 68, 68)',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              tension: 0.1
-            }
-          ]
-        },
-        '3y': {
-          labels: ['2021-Q1', '2021-Q2', '2021-Q3', '2021-Q4', '2022-Q1', '2022-Q2', '2022-Q3', '2022-Q4', '2023-Q1', '2023-Q2', '2023-Q3', '2023-Q4'],
-          datasets: [
-            {
-              label: 'CPI同比',
-              data: [2.5, 2.8, 3.0, 3.5, 4.0, 4.8, 5.5, 6.0, 6.2, 5.8, 5.0, 4.2],
-              borderColor: 'rgb(239, 68, 68)',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              tension: 0.1
-            }
-          ]
-        }
-      },
-
-
-    }
-    
-    // 如果没有选中指标或者没有对应的数据，返回空对象
-    if (!selectedIndicator || !data[selectedIndicator]) {
-      return null
-    }
-    
-    return data[selectedIndicator]
-  }
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [historicalData, setHistoricalData] = useState<Record<string, any> | null>(null)
   
-  const historicalData = getHistoricalData()
-
-  // 确保只有当historicalData存在时才获取currentData
-  let currentData = historicalData ? historicalData[timeRange as keyof typeof historicalData] : null
+  // 从API获取历史数据
+  useEffect(() => {
+    const fetchHistoricalData = async () => {
+      if (!selectedIndicator) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch(`/api/history/${selectedIndicator}?period=${timeRange}`);
+        
+        if (!response.ok) {
+          throw new Error(`API response not ok: ${response.status}`);
+        }
+        
+        const responseData: ApiResponse<HistoricalDataResponse> = await response.json();
+        
+        if (!responseData.success) {
+          throw new Error(responseData.message || 'Failed to fetch historical data');
+        }
+        
+        // 更新历史数据
+        setHistoricalData(prev => ({
+          ...prev,
+          [timeRange]: responseData.data.chartData
+        }));
+        
+      } catch (error) {
+        console.error('获取历史数据失败:', error);
+        setError(error instanceof Error ? error.message : '获取历史数据失败');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchHistoricalData();
+  }, [selectedIndicator, timeRange]);
   
-  // 确保数据集有正确的标签
-  if (currentData && currentData.datasets) {
-    // 深拷贝数据，避免修改原始数据
-    currentData = {
-      ...currentData,
-      datasets: currentData.datasets.map((dataset: { label?: string; [key: string]: any }) => ({
-        ...dataset,
-        // 确保每个数据集都有标签
-        label: dataset.label || `${indicators.find(ind => ind.symbol === selectedIndicator)?.name || selectedIndicator}数据`
-      }))
-    }
-  }
+  // 获取当前时间范围的数据
+  const currentData = historicalData && historicalData[timeRange];
 
   const options = {
     responsive: true,
@@ -139,33 +111,63 @@ const HistoryChart: React.FC<HistoryChartProps> = ({ selectedIndicator, indicato
     events: ['mousemove', 'mouseout', 'touchstart', 'touchmove'] as ('mousemove' | 'mouseout' | 'touchstart' | 'touchmove')[],
   }
 
+  // 基于实际数据的简单趋势分析
   const getTrendAnalysis = () => {
-    switch (selectedIndicator) {
-      case 'PCE':
-        return {
-          position: '当前PCE处于近1年的75%分位数，属于偏高水平',
-          trend: '下降趋势',
-          focus: '关注通胀回落速度，预计未来1-2个月继续回落'
-        }
+    // 如果没有数据，返回默认分析
+    if (!currentData || !currentData.datasets || !currentData.datasets[0] || !currentData.datasets[0].data) {
+      return {
+        position: '数据加载中...',
+        trend: '分析中...',
+        focus: '请等待数据加载完成'
+      }
+    }
 
-      case 'CPI':
-        return {
-          position: '当前CPI处于中等水平，通胀压力温和',
-          trend: '缓慢下降趋势',
-          focus: '关注核心通胀表现，预计继续回落至目标区间'
-        }
-
-
-      default:
-        return {
-          position: '数据加载中...',
-          trend: '分析中...',
-          focus: '请选择指标查看分析'
-        }
+    const data = currentData.datasets[0].data;
+    const lastValue = data[data.length - 1];
+    const secondLastValue = data[data.length - 2];
+    
+    // 计算最近变化趋势
+    const recentTrend = lastValue > secondLastValue ? '上升' : lastValue < secondLastValue ? '下降' : '稳定';
+    
+    // 计算整体趋势（简单方法：比较第一个和最后一个值）
+    const firstValue = data[0];
+    const overallTrend = lastValue > firstValue ? '整体上升' : lastValue < firstValue ? '整体下降' : '整体稳定';
+    
+    // 计算数据在范围中的位置（简单百分比）
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min;
+    const position = range === 0 ? 50 : Math.round(((lastValue - min) / range) * 100);
+    
+    const indicatorName = indicators.find(ind => ind.symbol === selectedIndicator)?.name || selectedIndicator;
+    
+    return {
+      position: `当前${indicatorName}处于近期数据的${position}%分位数`,
+      trend: `${recentTrend}趋势，${overallTrend}`,
+      focus: `关注${indicatorName}的持续变化趋势`
     }
   }
 
-  const trendAnalysis = getTrendAnalysis()
+  const trendAnalysis = getTrendAnalysis();
+
+  // 关键节点数据（保留静态数据，未来可以从API获取）
+  const keyEvents = [
+    {
+      date: '2022年3月',
+      event: '美联储开始加息周期',
+      color: 'bg-red-500'
+    },
+    {
+      date: '2023年6月',
+      event: '通胀见顶回落',
+      color: 'bg-blue-500'
+    },
+    {
+      date: '2023年12月',
+      event: '就业市场保持强劲',
+      color: 'bg-green-500'
+    }
+  ];
 
   return (
     <div className="card">
@@ -185,6 +187,7 @@ const HistoryChart: React.FC<HistoryChartProps> = ({ selectedIndicator, indicato
                 ? 'bg-blue-600 text-white' 
                 : 'bg-gray-200 text-gray-700'
             }`}
+            disabled={loading}
           >
             近12个月
           </button>
@@ -195,12 +198,21 @@ const HistoryChart: React.FC<HistoryChartProps> = ({ selectedIndicator, indicato
                 ? 'bg-blue-600 text-white' 
                 : 'bg-gray-200 text-gray-700'
             }`}
+            disabled={loading}
           >
             近3年
           </button>
         </div>
 
-        {currentData ? (
+        {loading ? (
+          <div className="h-64 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+          </div>
+        ) : error ? (
+          <div className="h-64 flex items-center justify-center text-red-500">
+            <p>加载数据出错: {error}</p>
+          </div>
+        ) : currentData ? (
           <div className="h-64">
             <Line options={options} data={currentData} />
           </div>
@@ -231,18 +243,12 @@ const HistoryChart: React.FC<HistoryChartProps> = ({ selectedIndicator, indicato
       <div className="mt-6">
         <h3 className="text-lg font-medium mb-3">关键节点</h3>
         <div className="space-y-2 text-sm">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <span className="text-gray-600">2022年3月：美联储开始加息周期</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <span className="text-gray-600">2023年6月：通胀见顶回落</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-gray-600">2023年12月：就业市场保持强劲</span>
-          </div>
+          {keyEvents.map((event, index) => (
+            <div key={index} className="flex items-center space-x-2">
+              <div className={`w-3 h-3 ${event.color} rounded-full`}></div>
+              <span className="text-gray-600">{event.date}：{event.event}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
