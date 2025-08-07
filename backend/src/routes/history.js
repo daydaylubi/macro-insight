@@ -25,9 +25,15 @@ router.get('/:symbol', async (req, res) => {
     const now = new Date();
     let startDate = '';
     if (period === '3y') {
-      startDate = new Date(now.setFullYear(now.getFullYear() - 3)).toISOString().split('T')[0];
+      // 创建新的Date对象，避免修改原始now对象
+      const threeYearsAgo = new Date(now);
+      threeYearsAgo.setFullYear(now.getFullYear() - 3);
+      startDate = threeYearsAgo.toISOString().split('T')[0];
     } else { // 默认 '12m'
-      startDate = new Date(now.setMonth(now.getMonth() - 12)).toISOString().split('T')[0];
+      // 创建新的Date对象，避免修改原始now对象
+      const twelveMonthsAgo = new Date(now);
+      twelveMonthsAgo.setMonth(now.getMonth() - 12);
+      startDate = twelveMonthsAgo.toISOString().split('T')[0];
     }
 
     // 获取历史数据
